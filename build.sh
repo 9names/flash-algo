@@ -21,7 +21,8 @@ function bin {
 
 
 function sym {
-    echo $((0x$(rust-nm $1 | grep -w $2 | cut -d ' ' -f 1) + 1))
+    local addr=$((0x$(rust-nm $1 | grep -w $2 | cut -d ' ' -f 1) + 1))
+    printf '0x%x\n' "$addr"
 }
 
 for target in "${targets[@]}"; do
