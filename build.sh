@@ -13,6 +13,7 @@ fi
 targets=(
     "thumbv6m-none-eabi"
     "thumbv8m.main-none-eabi"
+    "riscv32imac-unknown-none-elf"
 )
 
 function bin {
@@ -31,8 +32,11 @@ function sym {
         printf 'missing\n'
         return 0
     fi
+    local addr=$((16#$hex))
     # add 1 for arm to set thumb mode bit
-    local addr=$((16#$hex + 1))
+    if ! rust-objdump -f "$elf" | grep -q 'littleriscv'; then
+        addr=$((addr + 1))
+    fi
     printf '0x%x\n' "$addr"
 }
 
