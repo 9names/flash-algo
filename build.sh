@@ -9,26 +9,35 @@ else
     BASE64_FLAGS="-w0"
 fi
 
-cargo build --release
-ELF=target/thumbv6m-none-eabi/release/flash-algo
 
-rust-objdump --disassemble $ELF > target/disassembly.s
-rust-objdump -x $ELF > target/dump.txt
-rust-nm $ELF -n > target/nm.txt
+targets=(
+    "thumbv6m-none-eabi"
+    "thumbv8m.main-none-eabi"
+)
 
 function bin {
-    rust-objcopy $ELF -O binary - | base64 $BASE64_FLAGS
+    rust-objcopy $1 -O binary - | base64 $BASE64_FLAGS
 }
+
 
 function sym {
-    echo $((0x$(rust-nm $ELF | grep -w $1 | cut -d ' ' -f 1) + 1))
+    echo $((0x$(rust-nm $1 | grep -w $2 | cut -d ' ' -f 1) + 1))
 }
 
-cat <<EOF
-    instructions: $(bin)
-    pc_init: $(sym Init)
-    pc_uninit: $(sym UnInit)
-    pc_program_page: $(sym ProgramPage)
-    pc_erase_sector: $(sym EraseSector)
-    pc_verify: $(sym Verify)
+for target in "${targets[@]}"; do
+    cargo build --release --target $target
+    ELF=target/$target/release/flash-algo
+    rust-objdump --disassemble $ELF > target/$target/disassembly.s
+    rust-objdump -x $ELF > target/$target/dump.txt
+    rust-nm $ELF -n > target/$target/nm.txt
+
+    cat <<EOF
+Algo for $target:
+    instructions: $(bin $ELF)
+    pc_init: $(sym $ELF Init)
+    pc_uninit: $(sym $ELF UnInit)
+    pc_program_page: $(sym $ELF ProgramPage)
+    pc_erase_sector: $(sym $ELF EraseSector)
+    pc_verify: $(sym $ELF Verify)
 EOF
+done
