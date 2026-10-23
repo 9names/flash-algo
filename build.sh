@@ -16,12 +16,15 @@ targets=(
 )
 
 function bin {
-    rust-objcopy $1 -O binary - | base64 $BASE64_FLAGS
+    local elf=$1
+    rust-objcopy $elf -O binary - | base64 $BASE64_FLAGS
 }
 
 
 function sym {
-    local addr=$((0x$(rust-nm $1 | grep -w $2 | cut -d ' ' -f 1) + 1))
+    local elf=$1
+    local name=$2
+    local addr=$((0x$(rust-nm $elf | grep -w $name | cut -d ' ' -f 1) + 1))
     printf '0x%x\n' "$addr"
 }
 
